@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -567,9 +568,13 @@
     function identifyQuestions() {
       const questions = state.QUESTIONS || [];
 
+      // Free-text question type names vary between Creator (TEXT_RESPONSE) and
+      // the External Template docs (LONG_TEXT / SHORT_TEXT). Accept any of them.
+      const TEXT_TYPES = ['TEXT_RESPONSE', 'LONG_TEXT', 'SHORT_TEXT'];
+
       for (let i = 0; i < questions.length; i++) {
         const q = questions[i];
-        if (q.type === 'LONG_TEXT' && journalQuestionIndex === -1) {
+        if (TEXT_TYPES.indexOf(q.type) !== -1 && journalQuestionIndex === -1) {
           journalQuestionIndex = i;
         } else if (q.type === 'SLIDER' && moodQuestionIndex === -1) {
           moodQuestionIndex = i;
@@ -577,7 +582,7 @@
       }
 
       if (journalQuestionIndex === -1) {
-        console.warn('No LONG_TEXT question found — journal entry will not be saved to Cogniss.');
+        console.warn('No free-text (TEXT_RESPONSE / LONG_TEXT) question found — journal entry will not be saved to Cogniss.');
       }
     }
 
@@ -757,22 +762,23 @@
       const journalText = input.value.trim();
 
       try {
-        // Submit LONG_TEXT response — Cogniss expects text in `option.text`
-        // For free-text responses, the shape varies; the safest, most widely
-        // supported shape is to pass the text in an `option` object.
+        // Submit the free-text journal response.
+        // The QuestionResponse model has a dedicated `text` field for free-text
+        // answers (alongside option/options/value/audio/image), so we put the
+        // journal entry there at the top level of the payload.
         if (journalQuestionIndex !== -1) {
           postToApp('QUESTION_RESPONSE', {
             index: journalQuestionIndex,
-            option: { text: journalText },
+            text: journalText,
             duration: 0
           });
         }
 
-        // Submit SLIDER mood response
+        // Submit SLIDER mood response. The SLIDER stores its answer in `value`.
         if (moodQuestionIndex !== -1 && selectedMood !== null) {
           postToApp('QUESTION_RESPONSE', {
             index: moodQuestionIndex,
-            option: { value: selectedMood },
+            value: selectedMood,
             duration: 0
           });
         }
