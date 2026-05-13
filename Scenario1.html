@@ -502,14 +502,59 @@
           emojiMap[k.toLowerCase().trim()] = map[k];
         });
       } else {
-        // Minimal fallback — admin should provide full dictionary in CONFIG
+        // Built-in starter dictionary, tuned for uni-student wellbeing.
+        // App Admins can override per-activity by adding "emojiMap" to the
+        // Activity's Custom config JSON field.
         emojiMap = {
-          'coffee': '☕', 'tea': '🍵', 'walk': '🚶', 'walked': '🚶', 'walking': '🚶',
-          'happy': '😊', 'sad': '😢', 'tired': '😴', 'sleep': '😴', 'slept': '😴',
-          'study': '📚', 'studied': '📚', 'studying': '📚', 'friend': '👯', 'friends': '👯',
-          'gym': '🏋️', 'food': '🍽️', 'lunch': '🥗', 'dinner': '🍝', 'breakfast': '🥞'
+          // Drinks & food
+          'coffee': '☕', 'tea': '🍵', 'matcha': '🍵', 'water': '💧', 'wine': '🍷', 'beer': '🍺',
+          'breakfast': '🥞', 'lunch': '🥗', 'dinner': '🍝', 'snack': '🍿', 'pizza': '🍕',
+          'noodles': '🍜', 'ramen': '🍜', 'sushi': '🍣', 'burger': '🍔', 'cake': '🍰',
+          'chocolate': '🍫', 'food': '🍽️',
+          // Movement
+          'walk': '🚶', 'walked': '🚶', 'walking': '🚶', 'run': '🏃', 'ran': '🏃', 'running': '🏃',
+          'gym': '🏋️', 'yoga': '🧘', 'swim': '🏊', 'swimming': '🏊', 'bike': '🚴', 'cycled': '🚴',
+          'dance': '💃', 'danced': '💃',
+          // Study
+          'study': '📚', 'studied': '📚', 'studying': '📚', 'library': '📖', 'exam': '📝',
+          'exams': '📝', 'essay': '✍️', 'lecture': '🎓', 'class': '🎓', 'tutorial': '📓',
+          'assignment': '📋', 'homework': '📋', 'deadline': '⏰', 'thesis': '📄',
+          'research': '🔬', 'lab': '🧪',
+          // Feelings
+          'happy': '😊', 'sad': '😢', 'tired': '😴', 'exhausted': '😩', 'stressed': '😣',
+          'anxious': '😰', 'calm': '🌿', 'excited': '🤩', 'grateful': '🙏', 'proud': '🌟',
+          'hopeful': '🌈', 'lonely': '🫂', 'overwhelmed': '🌊', 'peaceful': '☮️',
+          'energised': '⚡', 'energized': '⚡', 'motivated': '🔥',
+          // People
+          'friend': '👯', 'friends': '👯', 'family': '👪', 'mum': '💐', 'mom': '💐',
+          'dad': '💐', 'partner': '💕', 'flatmate': '🏠', 'roommate': '🏠', 'housemate': '🏠',
+          'therapist': '💬', 'counsellor': '💬', 'counselor': '💬',
+          // Rest
+          'sleep': '😴', 'slept': '😴', 'sleeping': '😴', 'nap': '💤', 'napped': '💤',
+          'rest': '🛌', 'wake': '🌅', 'woke': '🌅',
+          // Time of day & weather
+          'morning': '🌅', 'afternoon': '☀️', 'evening': '🌇', 'night': '🌙',
+          'sun': '☀️', 'sunny': '☀️', 'sunshine': '🌞', 'rain': '🌧️', 'rainy': '🌧️',
+          'cloudy': '☁️', 'snow': '❄️', 'warm': '🌤️', 'cold': '🥶', 'windy': '🌬️',
+          'storm': '⛈️',
+          // Leisure
+          'music': '🎵', 'song': '🎶', 'playlist': '🎧', 'podcast': '🎙️', 'movie': '🎬',
+          'film': '🎬', 'tv': '📺', 'show': '📺', 'book': '📖', 'read': '📖', 'reading': '📖',
+          'game': '🎮', 'games': '🎮',
+          // Communication
+          'phone': '📱', 'called': '📞', 'texted': '💬', 'scrolled': '📱',
+          // Expression
+          'cry': '😭', 'cried': '😭', 'laugh': '😂', 'laughed': '😂', 'smile': '😊',
+          'smiled': '😊', 'hug': '🤗', 'hugged': '🤗', 'kiss': '😘',
+          'love': '❤️', 'loved': '❤️', 'heart': '💖',
+          // Places & nature
+          'park': '🌳', 'tree': '🌳', 'trees': '🌳', 'flower': '🌸', 'flowers': '🌸',
+          'beach': '🏖️', 'ocean': '🌊', 'garden': '🌷', 'cafe': '☕', 'café': '☕',
+          'shop': '🛍️', 'market': '🛒',
+          // Multi-word phrases
+          'deep breath': '🌬️', 'took a break': '☮️', 'self care': '💆',
+          'self-care': '💆', 'feeling good': '✨', 'feeling low': '🫂', 'got outside': '🌳'
         };
-        console.warn('No emoji dictionary in CONFIG — using minimal fallback. Add an emojiMap object to the activity Custom config.');
       }
 
       // Pre-compute multi-word phrases (for "deep breath" → emoji)
