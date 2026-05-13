@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Emoji Journal</title>
+  <style>
+    :root {
+      --color-primary: #7C5CFF;
+      --color-secondary: #FFB5D8;
+      --color-dark: #2D2A4A;
+      --color-light: #F7F4FF;
+      --color-background: #FBF9FF;
+      --color-text: #2D2A4A;
+      --color-muted: #8A87A8;
+      --color-card: #FFFFFF;
+      --color-success: #4ECDC4;
+      --border-radius: 16px;
+      --border-radius-sm: 10px;
+      --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      --shadow-card: 0 4px 20px rgba(124, 92, 255, 0.08);
+      --shadow-soft: 0 2px 8px rgba(124, 92, 255, 0.06);
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; padding: 0; height: 100%; }
+    body {
+      font-family: var(--font-family);
+      background-color: var(--color-background);
+      color: var(--color-text);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 20px 18px 32px;
+    }
+
+    .loader {
+      position: fixed; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--color-background);
+      z-index: 100;
+      transition: opacity 0.3s ease;
+    }
+    .loader.hidden { opacity: 0; pointer-events: none; }
+    .loader-content { text-align: center; }
+    .loader-emoji {
+      font-size: 48px;
+      animation: bounce 1.2s ease-in-out infinite;
+      display: inline-block;
+    }
+    .loader-text {
+      margin-top: 12px;
+      color: var(--color-muted);
+      font-size: 14px;
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-12px); }
+    }
+
+    .greeting {
+      margin: 8px 0 4px;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--color-dark);
+      letter-spacing: -0.3px;
+    }
+    .subgreeting {
+      margin: 0 0 24px;
+      font-size: 15px;
+      color: var(--color-muted);
+    }
+
+    .card {
+      background: var(--color-card);
+      border-radius: var(--border-radius);
+      padding: 20px;
+      box-shadow: var(--shadow-card);
+      margin-bottom: 16px;
+    }
+
+    .card-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--color-primary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    textarea.journal {
+      width: 100%;
+      min-height: 140px;
+      border: 2px solid var(--color-light);
+      border-radius: var(--border-radius-sm);
+      padding: 14px;
+      font-family: inherit;
+      font-size: 16px;
+      color: var(--color-text);
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.2s ease;
+      background: var(--color-card);
+    }
+    textarea.journal:focus {
+      border-color: var(--color-primary);
+    }
+    textarea.journal::placeholder {
+      color: var(--color-muted);
+      font-style: italic;
+    }
+
+    .char-count {
+      text-align: right;
+      font-size: 12px;
+      color: var(--color-muted);
+      margin-top: 6px;
+    }
+    .char-count.over { color: #E57373; }
+
+    .preview {
+      background: linear-gradient(135deg, var(--color-light) 0%, #FFF3F8 100%);
+      border-radius: var(--border-radius-sm);
+      padding: 16px;
+      min-height: 60px;
+      font-size: 17px;
+      line-height: 1.6;
+      color: var(--color-text);
+      word-wrap: break-word;
+      transition: all 0.2s ease;
+    }
+    .preview.empty {
+      color: var(--color-muted);
+      font-style: italic;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+    .preview .emoji-swap {
+      display: inline-block;
+      animation: pop 0.3s ease;
+    }
+    @keyframes pop {
+      0% { transform: scale(0.5); }
+      60% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+
+    .mood-section {
+      padding: 4px 0;
+    }
+    .mood-faces {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin: 8px 0 14px;
+    }
+    .mood-face {
+      flex: 1;
+      background: var(--color-light);
+      border: 2px solid transparent;
+      border-radius: var(--border-radius-sm);
+      padding: 12px 4px;
+      font-size: 28px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .mood-face:hover { background: #EFE9FF; }
+    .mood-face.selected {
+      background: var(--color-card);
+      border-color: var(--color-primary);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-soft);
+    }
+    .mood-face-label {
+      font-size: 10px;
+      color: var(--color-muted);
+      font-family: var(--font-family);
+      font-weight: 500;
+    }
+    .mood-face.selected .mood-face-label {
+      color: var(--color-primary);
+      font-weight: 600;
+    }
+
+    .btn-row {
+      margin-top: 8px;
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 16px 20px;
+      border-radius: var(--border-radius-sm);
+      font-family: inherit;
+      font-size: 16px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-primary {
+      background: var(--color-primary);
+      color: white;
+    }
+    .btn-primary:hover:not(:disabled) {
+      filter: brightness(1.08);
+      transform: translateY(-1px);
+    }
+    .btn-primary:disabled {
+      background: var(--color-muted);
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .btn-primary:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .complete-screen {
+      text-align: center;
+      padding: 40px 20px;
+    }
+    .complete-emoji {
+      font-size: 64px;
+      margin-bottom: 16px;
+      animation: pop 0.5s ease;
+    }
+    .complete-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--color-dark);
+      margin: 0 0 8px;
+    }
+    .complete-message {
+      font-size: 15px;
+      color: var(--color-muted);
+      margin: 0 0 24px;
+      max-width: 320px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .complete-story {
+      background: var(--color-card);
+      border-radius: var(--border-radius);
+      padding: 20px;
+      box-shadow: var(--shadow-card);
+      font-size: 17px;
+      line-height: 1.6;
+      margin: 0 auto 24px;
+      max-width: 480px;
+      text-align: left;
+    }
+
+    .error-banner {
+      background: #FFF0F0;
+      color: #B33A3A;
+      padding: 12px 16px;
+      border-radius: var(--border-radius-sm);
+      margin-bottom: 16px;
+      font-size: 14px;
+    }
+
+    .hidden { display: none !important; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="loader" id="loader">
+    <div class="loader-content">
+      <span class="loader-emoji">📔</span>
+      <div class="loader-text">Getting your journal ready…</div>
+    </div>
+  </div>
+
+  <div class="app hidden" id="app">
+    <h1 class="greeting" id="greeting">How was your day?</h1>
+    <p class="subgreeting" id="subgreeting">Take a moment to reflect. We'll turn it into a little story.</p>
+
+    <div id="error-banner" class="error-banner hidden"></div>
+
+    <div id="journal-screen">
+      <div class="card">
+        <div class="card-label">✍️ Your day</div>
+        <textarea
+          class="journal"
+          id="journal-input"
+          placeholder="had a coffee and went for a walk with a friend..."
+          maxlength="5000"
+          aria-label="Journal entry"
+        ></textarea>
+        <div class="char-count" id="char-count">0 / 5000</div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">✨ Your emoji story</div>
+        <div class="preview empty" id="preview">Start typing — your words will turn into emojis as you go</div>
+      </div>
+
+      <div class="card mood-section">
+        <div class="card-label">💜 How are you feeling?</div>
+        <div class="mood-faces" id="mood-faces" role="radiogroup" aria-label="Mood rating">
+          <button class="mood-face" data-mood="1" type="button" aria-label="Really tough">
+            <span>😞</span>
+            <span class="mood-face-label">Tough</span>
+          </button>
+          <button class="mood-face" data-mood="2" type="button" aria-label="Not great">
+            <span>😕</span>
+            <span class="mood-face-label">Meh</span>
+          </button>
+          <button class="mood-face" data-mood="3" type="button" aria-label="Okay">
+            <span>😐</span>
+            <span class="mood-face-label">Okay</span>
+          </button>
+          <button class="mood-face" data-mood="4" type="button" aria-label="Good">
+            <span>🙂</span>
+            <span class="mood-face-label">Good</span>
+          </button>
+          <button class="mood-face" data-mood="5" type="button" aria-label="Great">
+            <span>😊</span>
+            <span class="mood-face-label">Great</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" id="submit-btn" type="button" disabled>Save my journal</button>
+      </div>
+    </div>
+
+    <div id="complete-screen" class="complete-screen hidden">
+      <div class="complete-emoji">🌱</div>
+      <h2 class="complete-title">Thanks for sharing</h2>
+      <p class="complete-message" id="complete-message">Reflecting on your day is a small act of self-care. We're glad you took a moment.</p>
+      <div class="complete-story" id="complete-story"></div>
+    </div>
+  </div>
+
+  <script>
+    // ============================================================
+    // Cogniss External Template — Emoji Journal
+    // ============================================================
+
+    // ---- Platform detection + message bridge ----
+    const isNative = typeof window.ReactNativeWebView !== 'undefined';
+
+    function postToApp(key, data) {
+      const text = JSON.stringify({ key: key, data: data === undefined ? null : data });
+      if (isNative) {
+        window.ReactNativeWebView.postMessage(text);
+      } else {
+        window.parent.postMessage(text, '*');
+      }
+    }
+
+    // ---- REST_REQUEST helper (promise-based) ----
+    let _reqId = 0;
+    const _pending = {};
+
+    function restRequest(method, model, data, specialParams) {
+      return new Promise(function(resolve, reject) {
+        const id = 'req-' + (++_reqId);
+        _pending[id] = { resolve: resolve, reject: reject };
+        const text = JSON.stringify({
+          key: 'REST_REQUEST',
+          method: method,
+          model: model,
+          data: data,
+          id: id,
+          specialParams: specialParams || null
+        });
+        if (isNative) {
+          window.ReactNativeWebView.postMessage(text);
+        } else {
+          window.parent.postMessage(text, '*');
+        }
+      });
+    }
+
+    // ---- App state ----
+    const state = {};
+    const REQUIRED = ['API', 'USER', 'AUTH', 'ACTIVITY', 'ACTIVITY_RESPONSE', 'CONFIG', 'QUESTIONS'];
+    let started = false;
+    let quitSent = false;
+    let emojiMap = {};
+    let multiWordPhrases = [];
+    let selectedMood = null;
+    let journalQuestionIndex = -1;
+    let moodQuestionIndex = -1;
+
+    // ---- Inbound message handling ----
+    function onMessage(event) {
+      try {
+        const message = JSON.parse(event.data);
+        if (!message || !message.key) return;
+        handleMessage(message);
+      } catch (e) {
+        // ignore non-JSON messages
+      }
+    }
+
+    function handleMessage(message) {
+      // REQUEST_RESPONSE has top-level id + data + error
+      if (message.key === 'REQUEST_RESPONSE') {
+        const p = _pending[message.id];
+        if (p) {
+          delete _pending[message.id];
+          if (message.error) {
+            p.reject(new Error(message.error));
+          } else {
+            p.resolve(message.data);
+          }
+        }
+        return;
+      }
+
+      // QUESTION_RESPONSE from app = our submission was acknowledged (we ignore the score)
+      if (message.key === 'QUESTION_RESPONSE') {
+        return;
+      }
+
+      // Store init messages and try to start
+      state[message.key] = message.data;
+
+      if (!started && REQUIRED.every(function(k) { return state[k] !== undefined; })) {
+        started = true;
+        startTemplate().catch(function(err) {
+          console.error('startTemplate failed:', err);
+          showError("Something went wrong starting your journal. Please try again.");
+        });
+      }
+    }
+
+    // Listen on both — Android RN fires on document, iOS RN + web fire on window
+    document.addEventListener('message', onMessage);
+    window.addEventListener('message', onMessage);
+
+    // ---- Startup ----
+    window.addEventListener('load', function() {
+      postToApp('READY_DYNAMIC_MEDIA');
+    });
+
+    // ---- Main start ----
+    async function startTemplate() {
+      // 1. Load emoji dictionary from CONFIG (with sensible fallback)
+      loadEmojiDictionary();
+
+      // 2. Find which Cogniss questions to use for journal text and mood
+      identifyQuestions();
+
+      // 3. Apply theme (non-blocking — render even if theme fails)
+      applyTheme().catch(function(err) {
+        console.warn('Theme load failed (non-fatal):', err);
+      });
+
+      // 4. Personalise greeting with user's name
+      personaliseGreeting();
+
+      // 5. Wire up UI
+      wireUpUI();
+
+      // 6. Reveal the app
+      document.getElementById('loader').classList.add('hidden');
+      document.getElementById('app').classList.remove('hidden');
+    }
+
+    // ---- Emoji dictionary ----
+    function loadEmojiDictionary() {
+      const config = state.CONFIG || {};
+      // Accept either { emojiMap: {...} } or a flat config
+      const map = config.emojiMap || config.emoji_dictionary || config.dictionary;
+
+      if (map && typeof map === 'object') {
+        // Normalise keys to lowercase
+        emojiMap = {};
+        Object.keys(map).forEach(function(k) {
+          emojiMap[k.toLowerCase().trim()] = map[k];
+        });
+      } else {
+        // Minimal fallback — admin should provide full dictionary in CONFIG
+        emojiMap = {
+          'coffee': '☕', 'tea': '🍵', 'walk': '🚶', 'walked': '🚶', 'walking': '🚶',
+          'happy': '😊', 'sad': '😢', 'tired': '😴', 'sleep': '😴', 'slept': '😴',
+          'study': '📚', 'studied': '📚', 'studying': '📚', 'friend': '👯', 'friends': '👯',
+          'gym': '🏋️', 'food': '🍽️', 'lunch': '🥗', 'dinner': '🍝', 'breakfast': '🥞'
+        };
+        console.warn('No emoji dictionary in CONFIG — using minimal fallback. Add an emojiMap object to the activity Custom config.');
+      }
+
+      // Pre-compute multi-word phrases (for "deep breath" → emoji)
+      multiWordPhrases = Object.keys(emojiMap)
+        .filter(function(k) { return k.indexOf(' ') > -1; })
+        .sort(function(a, b) { return b.length - a.length; }); // longest first
+    }
+
+    // ---- Identify which questions are journal text and which is mood ----
+    function identifyQuestions() {
+      const questions = state.QUESTIONS || [];
+
+      for (let i = 0; i < questions.length; i++) {
+        const q = questions[i];
+        if (q.type === 'LONG_TEXT' && journalQuestionIndex === -1) {
+          journalQuestionIndex = i;
+        } else if (q.type === 'SLIDER' && moodQuestionIndex === -1) {
+          moodQuestionIndex = i;
+        }
+      }
+
+      if (journalQuestionIndex === -1) {
+        console.warn('No LONG_TEXT question found — journal entry will not be saved to Cogniss.');
+      }
+    }
+
+    // ---- Personalise greeting ----
+    function personaliseGreeting() {
+      const user = state.USER || {};
+      const name = (user.displayName || '').split(' ')[0] || user.username || '';
+
+      const hour = new Date().getHours();
+      let timePart;
+      if (hour < 5) timePart = "How's tonight going";
+      else if (hour < 12) timePart = "How's your morning";
+      else if (hour < 17) timePart = "How's your day going";
+      else if (hour < 22) timePart = "How was your day";
+      else timePart = "How's tonight going";
+
+      const greeting = name
+        ? timePart + ', ' + name + '?'
+        : timePart + '?';
+
+      document.getElementById('greeting').textContent = greeting;
+    }
+
+    // ---- Theme ----
+    async function applyTheme() {
+      let appTheme = {};
+      let platformTheme = {};
+
+      try {
+        if (state.ACTIVITY_RESPONSE && state.ACTIVITY_RESPONSE.app) {
+          const app = await restRequest('get', 'App', state.ACTIVITY_RESPONSE.app);
+          appTheme = (app && app.theme) || {};
+        }
+      } catch (e) { console.warn('App theme fetch failed:', e); }
+
+      try {
+        const settings = await restRequest('list', 'Settings', {});
+        if (settings && settings.items && settings.items.length > 0) {
+          platformTheme = settings.items[0].theme || {};
+        }
+      } catch (e) { console.warn('Platform theme fetch failed:', e); }
+
+      const colors = Object.assign({}, platformTheme.colors, appTheme.colors);
+      const font = appTheme.font || platformTheme.font;
+      const rounded = appTheme.rounded || platformTheme.rounded;
+
+      const root = document.documentElement;
+      if (colors.primary) root.style.setProperty('--color-primary', colors.primary);
+      if (colors.secondary) root.style.setProperty('--color-secondary', colors.secondary);
+      if (colors.dark) root.style.setProperty('--color-dark', colors.dark);
+      if (colors.light) root.style.setProperty('--color-light', colors.light);
+
+      const radiusMap = { NONE: '0px', SMALL: '6px', MEDIUM: '12px', LARGE: '20px', FULL: '9999px' };
+      if (rounded && radiusMap[rounded]) {
+        root.style.setProperty('--border-radius', radiusMap[rounded]);
+      }
+    }
+
+    // ---- UI wiring ----
+    function wireUpUI() {
+      const input = document.getElementById('journal-input');
+      const preview = document.getElementById('preview');
+      const charCount = document.getElementById('char-count');
+      const moodFaces = document.querySelectorAll('.mood-face');
+      const submitBtn = document.getElementById('submit-btn');
+
+      // Live preview + char count, debounced
+      let renderTimeout;
+      input.addEventListener('input', function() {
+        const text = input.value;
+
+        charCount.textContent = text.length + ' / 5000';
+        charCount.classList.toggle('over', text.length >= 4900);
+
+        clearTimeout(renderTimeout);
+        renderTimeout = setTimeout(function() {
+          renderPreview(text);
+          updateSubmitState();
+        }, 80);
+      });
+
+      // Mood faces
+      moodFaces.forEach(function(face) {
+        face.addEventListener('click', function() {
+          moodFaces.forEach(function(f) { f.classList.remove('selected'); });
+          face.classList.add('selected');
+          selectedMood = parseInt(face.getAttribute('data-mood'), 10);
+          updateSubmitState();
+        });
+      });
+
+      // Submit
+      submitBtn.addEventListener('click', handleSubmit);
+    }
+
+    function updateSubmitState() {
+      const input = document.getElementById('journal-input');
+      const hasText = input.value.trim().length >= 3;
+      const hasMood = selectedMood !== null;
+      document.getElementById('submit-btn').disabled = !(hasText && hasMood);
+    }
+
+    // ---- Emoji rendering ----
+    function renderPreview(text) {
+      const preview = document.getElementById('preview');
+
+      if (!text.trim()) {
+        preview.className = 'preview empty';
+        preview.textContent = 'Start typing — your words will turn into emojis as you go';
+        return;
+      }
+
+      preview.className = 'preview';
+      preview.innerHTML = rebuildSafely(text);
+    }
+
+    // Walk the text, output safe HTML with emojis swapped in.
+    // Multi-word phrases first (longest-match), then single-word lookups.
+    function rebuildSafely(text) {
+      // First mark multi-word phrases with placeholders
+      let working = text;
+      const placeholders = [];
+      multiWordPhrases.forEach(function(phrase) {
+        const re = new RegExp('\\b' + escapeRegex(phrase) + '\\b', 'gi');
+        working = working.replace(re, function() {
+          const idx = placeholders.length;
+          placeholders.push(emojiMap[phrase]);
+          return '\u0001' + idx + '\u0001';
+        });
+      });
+
+      // Tokenise: word chars vs everything else
+      const tokens = working.match(/(\u0001\d+\u0001|[A-Za-z']+|[^A-Za-z'\u0001]+|\u0001|\d+)/g) || [];
+
+      const out = tokens.map(function(tok) {
+        // Multi-word placeholder
+        const ph = tok.match(/^\u0001(\d+)\u0001$/);
+        if (ph) {
+          return '<span class="emoji-swap">' + escapeHtml(placeholders[parseInt(ph[1], 10)]) + '</span>';
+        }
+        // Word token
+        if (/^[A-Za-z']+$/.test(tok)) {
+          const key = tok.toLowerCase();
+          if (emojiMap[key]) {
+            return '<span class="emoji-swap">' + escapeHtml(emojiMap[key]) + '</span>';
+          }
+          return escapeHtml(tok);
+        }
+        // Whitespace / punctuation / numbers
+        return escapeHtml(tok);
+      }).join('');
+
+      return out;
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function escapeRegex(s) {
+      return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    // ---- Submit ----
+    async function handleSubmit() {
+      if (quitSent) return;
+      const submitBtn = document.getElementById('submit-btn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Saving…';
+
+      const input = document.getElementById('journal-input');
+      const journalText = input.value.trim();
+
+      try {
+        // Submit LONG_TEXT response — Cogniss expects text in `option.text`
+        // For free-text responses, the shape varies; the safest, most widely
+        // supported shape is to pass the text in an `option` object.
+        if (journalQuestionIndex !== -1) {
+          postToApp('QUESTION_RESPONSE', {
+            index: journalQuestionIndex,
+            option: { text: journalText },
+            duration: 0
+          });
+        }
+
+        // Submit SLIDER mood response
+        if (moodQuestionIndex !== -1 && selectedMood !== null) {
+          postToApp('QUESTION_RESPONSE', {
+            index: moodQuestionIndex,
+            option: { value: selectedMood },
+            duration: 0
+          });
+        }
+
+        // Small delay so responses register before QUIT
+        await new Promise(function(r) { setTimeout(r, 250); });
+
+        // Show completion screen
+        showCompletion(journalText);
+
+        // After a moment, quit
+        setTimeout(function() {
+          if (!quitSent) {
+            quitSent = true;
+            postToApp('QUIT', { completeState: 'COMPLETE' });
+          }
+        }, 2200);
+
+      } catch (err) {
+        console.error('Submit failed:', err);
+        showError('Could not save your journal — please try again.');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Save my journal';
+      }
+    }
+
+    function showCompletion(journalText) {
+      document.getElementById('journal-screen').classList.add('hidden');
+      document.getElementById('greeting').classList.add('hidden');
+      document.getElementById('subgreeting').classList.add('hidden');
+
+      const story = document.getElementById('complete-story');
+      story.innerHTML = rebuildSafely(journalText);
+
+      // Pick a supportive message based on mood
+      const messages = {
+        1: "Tough days are part of the journey. Be gentle with yourself today. 💜",
+        2: "Some days just feel off, and that's okay. Tomorrow is a fresh page.",
+        3: "Steady is good. Thanks for checking in with yourself today.",
+        4: "Glad to hear it was a good one. Carry that into tomorrow.",
+        5: "Love that for you! Hold onto this feeling. 🌻"
+      };
+      const msg = messages[selectedMood] || "Reflecting on your day is a small act of self-care.";
+      document.getElementById('complete-message').textContent = msg;
+
+      document.getElementById('complete-screen').classList.remove('hidden');
+    }
+
+    function showError(msg) {
+      const banner = document.getElementById('error-banner');
+      banner.textContent = msg;
+      banner.classList.remove('hidden');
+      setTimeout(function() { banner.classList.add('hidden'); }, 5000);
+    }
+  </script>
+</body>
+</html>
